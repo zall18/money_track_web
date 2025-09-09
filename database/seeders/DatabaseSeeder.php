@@ -10,6 +10,7 @@ use App\Models\Flowcash;
 use App\Models\Goal;
 use App\Models\RecurringTransaction;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -46,6 +47,10 @@ class DatabaseSeeder extends Seeder
             ])
         );
 
+        Wallet::factory(2)->create([
+                'user_id' => $user->id,
+        ]);
+
         // Buat kategori expense
         $expenseCategories = collect([
             'Makan',
@@ -67,6 +72,7 @@ class DatabaseSeeder extends Seeder
         // Buat transaksi (Flowcash) - 30 record
         Flowcash::factory(30)->create([
             'user_id' => $user->id,
+            'wallet_id' => rand(1, 2)
         ])->each(function ($transaction) use ($allCategories) {
             $transaction->category_id = $allCategories->random()->id;
             $transaction->save();

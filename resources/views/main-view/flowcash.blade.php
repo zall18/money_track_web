@@ -1,6 +1,73 @@
 @extends('template.index')
 
 @section('container')
+
+<div class="row g-2 p-0">
+    <!-- Card Informasi -->
+    <div class="col-lg-3 col-md-6">
+        <div class="card overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="">
+                        <h4 class="card-title fw-bolder mb-3">Total Wallet</h4>
+                        <h3 class="fw-bolder mb-0">Rp {{ $balance }}</h3>
+                    
+                    </div>
+                    <div class=" bg-primary-subtle rounded-circle p-2 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-wallet text-primary fs-7"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="">
+                        <h4 class="card-title fw-bolder mb-3">Total Pengeluaran</h4>
+                        <h3 class="fw-bolder mb-0">Rp {{ $expenseTotal }}</h3>
+                        
+                    </div>
+                    <div class="bg-danger-subtle rounded-circle p-2 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-arrow-down-right text-danger fs-7"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="">
+                        <h4 class="card-title fw-bolder mb-3">Total Pemasukan</h4>
+                        <h3 class="fw-bolder mb-0">Rp {{ $incomeTotal }}</h3>
+                        
+                    </div>
+                    <div class="bg-success-subtle rounded-circle p-2 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-arrow-up-left text-success fs-7"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card overflow-hidden">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="">
+                        <h4 class="card-title fw-bolder mb-3">Transaksi Bulan Ini</h4>
+                        <h3 class="fw-bolder mb-0">{{ $thisMonthTransaction }}</h3>
+                    </div>
+                    <div class="bg-info-subtle rounded-circle p-2 d-flex align-items-center justify-content-center">
+                        <i class="ti ti-repeat text-info fs-7"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -13,6 +80,9 @@
                         </p>
                     </div>
                     <div class="d-flex gap-2 mt-3 mt-md-0">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTransactionModal">
+                            <i class="ti ti-plus me-2"></i> Add Transaction
+                        </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#filterModal">
                             <i class="ti ti-filter me-2"></i> Filter
                         </button>
@@ -71,7 +141,7 @@
                         </thead>
                         <tbody>
                             @foreach($flowcash as $transaction)
-                            <tr>
+                            <tr class="{{ $transaction->category->type == 'expense' ? 'table-danger' : 'table-success' }}">
                                 <td>
                                     <div class="ms-3">
                                         <h6 class="mb-0 fw-bolder">{{ $transaction->user->name ?? 'Unknown' }}</h6>
@@ -191,6 +261,91 @@
     </div>
 </div>
 
+{{-- Transaction Modal --}}
+<div class="modal fade" id="addTransactionModal" tabindex="-1" aria-labelledby="addTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addTransactionModalLabel">Tambah Transaksi Baru</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="addTransactionForm" method="POST" >
+                @csrf
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="user_id" class="form-label">Pengguna <span class="text-danger">*</span></label>
+                            <select class="form-select" id="user_id" name="user_id" required>
+                                <option value="">Pilih Pengguna</option>
+                                @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->email }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="wallet_id" class="form-label">Wallet <span class="text-danger">*</span></label>
+                            <select class="form-select" id="wallet_id" name="wallet_id" required>
+                                <option value="">Pilih Wallet</option>
+                                @foreach($wallets as $wallet)
+                                <option value="{{ $wallet->id }}">{{ $wallet->name }} - Rp {{ number_format($wallet->balance, 0, ',', '.') }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="category_id" class="form-label">Kategori</label>
+                            <select class="form-select" id="category_id" name="category_id">
+                                <option value="">Pilih Kategori (Opsional)</option>
+                                @foreach($categories as $category)
+                                <option value="{{ $category->id }}" data-type="{{ $category->type }}">{{ $category->name }} ({{ $category->type }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="transaction_type" class="form-label">Tipe Transaksi <span class="text-danger">*</span></label>
+                            <select class="form-select" id="transaction_type" name="type" required>
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="amount" class="form-label">Jumlah <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" class="form-control" id="amount" name="amount" min="0" step="100" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="transaction_date" class="form-label">Tanggal Transaksi <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="transaction_date" name="transaction_date" value="{{ date('Y-m-d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Tambahkan deskripsi transaksi (opsional)"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <span id="amountInfo">Transaksi pemasukan akan menambah saldo wallet, transaksi pengeluaran akan mengurangi saldo wallet.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .sortable {
         cursor: pointer;
@@ -208,6 +363,12 @@
     #activeFilters .badge {
         font-size: 0.8rem;
         padding: 0.35rem 0.65rem;
+    }
+        #addTransactionModal .modal-dialog {
+        max-width: 600px;
+    }
+    #addTransactionModal .input-group-text {
+        background-color: #f8f9fa;
     }
 </style>
 
@@ -434,6 +595,84 @@
                 document.getElementById('transactionDetails').innerHTML = transactionDetails;
                 $('#detailModal').modal('show');
             });
+        });
+
+        // Update info berdasarkan tipe transaksi
+        const transactionType = document.getElementById('transaction_type');
+        const amountInfo = document.getElementById('amountInfo');
+        
+        function updateAmountInfo() {
+            const type = transactionType.value;
+            if (type === 'income') {
+                amountInfo.textContent = 'Transaksi pemasukan akan menambah saldo wallet.';
+            } else if (type === 'expense') {
+                amountInfo.textContent = 'Transaksi pengeluaran akan mengurangi saldo wallet.';
+            } else {
+                amountInfo.textContent = 'Transfer akan memindahkan saldo antar wallet.';
+            }
+        }
+        
+        transactionType.addEventListener('change', updateAmountInfo);
+        updateAmountInfo();
+        
+        // Auto-select kategori type berdasarkan tipe transaksi
+        transactionType.addEventListener('change', function() {
+            const type = this.value;
+            const categoryOptions = document.querySelectorAll('#category_id option');
+            
+            categoryOptions.forEach(option => {
+                if (option.value === '') return;
+                
+                if (type === 'transfer') {
+                    // Untuk transfer, sembunyikan semua kategori biasa
+                    option.style.display = 'none';
+                } else {
+                    // Untuk income/expense, tampilkan hanya kategori dengan type yang sesuai
+                    const categoryType = option.getAttribute('data-type');
+                    if (categoryType === type) {
+                        option.style.display = 'block';
+                    } else {
+                        option.style.display = 'none';
+                    }
+                }
+            });
+            
+            // Reset kategori jika tidak sesuai
+            const selectedCategory = document.getElementById('category_id');
+            if (type === 'transfer' && selectedCategory.value !== '') {
+                selectedCategory.value = '';
+            } else if (type !== 'transfer' && selectedCategory.value !== '') {
+                const selectedOption = selectedCategory.options[selectedCategory.selectedIndex];
+                const categoryType = selectedOption.getAttribute('data-type');
+                if (categoryType !== type) {
+                    selectedCategory.value = '';
+                }
+            }
+        });
+        
+        // Trigger change event saat modal dibuka
+        document.getElementById('addTransactionModal').addEventListener('show.bs.modal', function() {
+            transactionType.dispatchEvent(new Event('change'));
+        });
+        
+        // Validasi form
+        document.getElementById('addTransactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validasi sederhana
+            const amount = document.getElementById('amount').value;
+            if (amount <= 0) {
+                alert('Jumlah transaksi harus lebih dari 0');
+                return;
+            }
+            
+            // Submit form jika valid
+            this.submit();
+        });
+        
+        // Format input amount
+        document.getElementById('amount').addEventListener('input', function() {
+            if (this.value < 0) this.value = 0;
         });
         
         // Inisialisasi pengurutan default

@@ -4,6 +4,7 @@ namespace Database\Factories;
 
 use App\Models\Category;
 use App\Models\User;
+use App\Models\Wallet;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,6 +21,7 @@ class FlowcashFactory extends Factory
     {
         return [
              'user_id' => User::factory(),
+            'wallet_id' => Wallet::factory(),
             'category_id' => Category::factory(),
             'amount' => $this->faker->numberBetween(10000, 5000000),
             'description' => $this->faker->sentence(),

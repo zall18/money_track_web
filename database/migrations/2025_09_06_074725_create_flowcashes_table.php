@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('flowcashes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('wallet_id')->constrained('wallets')->onDelete('cascade');
             $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
