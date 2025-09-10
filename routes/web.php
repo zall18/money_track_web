@@ -19,3 +19,5 @@ Route::get('/', function () {
 });
 
 Route::get('/flowcash', [FlowcashController::class, 'index'])->name('flowcash.index');
+Route::post('/flowcash/create', [FlowcashController::class, 'store'])->name('flowcash.store');
+Route::put('/flowcash/{id}', [FlowcashController::class, 'update'])->name('flowcash.update');

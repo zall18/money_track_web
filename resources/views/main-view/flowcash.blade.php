@@ -133,6 +133,8 @@
                                 <th scope="col" class="sortable" data-sort="description">
                                     Deskripsi <i class="ti ti-arrows-sort ms-1"></i>
                                 </th>
+
+
                                 <th scope="col" class="sortable" data-sort="transaction_date">
                                     Tanggal Transaksi <i class="ti ti-arrows-sort ms-1"></i>
                                 </th>
@@ -158,10 +160,18 @@
                                 <td>{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y') }}</td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <button class="btn btn-sm btn-info view-details" data-id="{{ $transaction->id }}">
+                                        <button class="btn btn-sm btn-info view-details" data-id="{{ $transaction->id }}" data-name="{{ $transaction->user->name }}" data-category="{{ $transaction->category->name }}" data-amount="{{ $transaction->amount }}" data-desc="{{ $transaction->description }}" data-date="{{ $transaction->transaction_date }}">
                                             <i class="ti ti-eye"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-warning">
+                                        <button class="btn btn-sm btn-warning" 
+                                                data-id="{{ $transaction->id }}"
+                                                data-user-id="{{ $transaction->user_id }}"
+                                                data-wallet-id="{{ $transaction->wallet_id }}"
+                                                data-category-id="{{ $transaction->category_id }}"
+                                                data-type="{{ $transaction->category->type }}"
+                                                data-amount="{{ $transaction->amount }}"
+                                                data-date="{{ $transaction->transaction_date }}"
+                                                data-desc="{{ $transaction->description }}">
                                             <i class="ti ti-edit"></i>
                                         </button>
                                         <button class="btn btn-sm btn-danger">
@@ -269,7 +279,7 @@
                 <h5 class="modal-title" id="addTransactionModalLabel">Tambah Transaksi Baru</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="addTransactionForm" method="POST" >
+            <form id="addTransactionForm" method="POST"  action="{{ route('flowcash.store') }}">
                 @csrf
                 <div class="modal-body">
                     <div class="row">
@@ -305,7 +315,7 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="transaction_type" class="form-label">Tipe Transaksi <span class="text-danger">*</span></label>
-                            <select class="form-select" id="transaction_type" name="type" required>
+                            <select class="form-select" id="transaction_type"  required>
                                 <option value="income">Pemasukan</option>
                                 <option value="expense">Pengeluaran</option>
                                 <option value="transfer">Transfer</option>
@@ -346,6 +356,96 @@
     </div>
 </div>
 
+{{-- Edit Transaction Modal --}}
+<div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editTransactionModalLabel">Edit Transaksi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editTransactionForm" method="POST">
+                @csrf
+                @method('PUT')
+                
+                <div class="modal-body">
+                    <input type="hidden" id="edit_id" name="id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_user_id" class="form-label">Pengguna <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_user_id" name="user_id" required>
+                                <option value="">Pilih Pengguna</option>
+                                @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->name }} - {{ $user->email }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_wallet_id" class="form-label">Wallet <span class="text-danger">*</span></label>
+                            <select class="form-select" id="edit_wallet_id" name="wallet_id" required>
+                                <option value="">Pilih Wallet</option>
+                                @foreach($wallets as $wallet)
+                                <option value="{{ $wallet->id }}">{{ $wallet->name }} - Rp {{ number_format($wallet->balance, 0, ',', '.') }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_category_id" class="form-label">Kategori</label>
+                            <select class="form-select" id="edit_category_id" name="category_id">
+                                <option value="">Pilih Kategori (Opsional)</option>
+                                @foreach($categories as $category)
+                                <option value="{{ $category->id }}" data-type="{{ $category->type }}">{{ $category->name }} ({{ $category->type }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_transaction_type" class="form-label">Tipe Transaksi</label>
+                            <select class="form-select" id="edit_transaction_type">
+                                <option value="income">Pemasukan</option>
+                                <option value="expense">Pengeluaran</option>
+                                <option value="transfer">Transfer</option>
+                            </select>
+                            <input type="hidden" id="edit_type">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_amount" class="form-label">Jumlah <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">Rp</span>
+                                <input type="number" class="form-control" id="edit_amount" name="amount" step="100" placeholder="0" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_transaction_date" class="form-label">Tanggal Transaksi <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_transaction_date" name="transaction_date" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_description" class="form-label">Deskripsi</label>
+                        <textarea class="form-control" id="edit_description" name="description" rows="3" placeholder="Tambahkan deskripsi transaksi (opsional)"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="ti ti-info-circle me-2"></i>
+                        <span id="edit_amountInfo">Transaksi pemasukan akan menambah saldo wallet, transaksi pengeluaran akan mengurangi saldo wallet.</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update Transaksi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .sortable {
         cursor: pointer;
@@ -373,6 +473,47 @@
 </style>
 
 <script>
+    function openEditModal(transactionId) {
+        // Ambil data transaksi dari server (dalam implementasi nyata)
+        // Untuk contoh, kita akan menggunakan data dari atribut data-* pada tombol
+        const button = document.querySelector(`.btn-warning[data-id="${transactionId}"]`);
+        console.log(transactionId);
+        if (!button) return;
+        
+        // Isi form dengan data transaksi
+        document.getElementById('edit_id').value = transactionId;
+        document.getElementById('edit_user_id').value = button.getAttribute('data-user-id');
+        document.getElementById('edit_wallet_id').value = button.getAttribute('data-wallet-id');
+        document.getElementById('edit_category_id').value = button.getAttribute('data-category-id');
+        document.getElementById('edit_transaction_type').value = button.getAttribute('data-type');
+        document.getElementById('edit_type').value = button.getAttribute('data-type');
+        document.getElementById('edit_amount').value = button.getAttribute('data-amount');
+        document.getElementById('edit_transaction_date').value = button.getAttribute('data-date');
+        document.getElementById('edit_description').value = button.getAttribute('data-desc') || '';
+        
+        // Update info berdasarkan tipe transaksi
+        updateEditAmountInfo();
+        
+        // Set action form
+        document.getElementById('editTransactionForm').action = `/flowcash/${transactionId}`;
+        
+        // Buka modal
+        $('#editTransactionModal').modal('show');
+    }
+
+    // Update info untuk modal edit
+    function updateEditAmountInfo() {
+        const type = document.getElementById('edit_transaction_type').value;
+        const amountInfo = document.getElementById('edit_amountInfo');
+        
+        if (type === 'income') {
+            amountInfo.textContent = 'Transaksi pemasukan akan menambah saldo wallet.';
+        } else if (type === 'expense') {
+            amountInfo.textContent = 'Transaksi pengeluaran akan mengurangi saldo wallet.';
+        } else {
+            amountInfo.textContent = 'Transfer akan memindahkan saldo antar wallet.';
+        }
+    }
     document.addEventListener('DOMContentLoaded', function() {
         // Variables untuk menyimpan state
         let currentSort = {
@@ -570,24 +711,29 @@
         document.querySelectorAll('.view-details').forEach(button => {
             button.addEventListener('click', function() {
                 const transactionId = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const category = this.getAttribute('data-category');
+                const amount = this.getAttribute('data-amount');
+                const desc = this.getAttribute('data-desc');
+                const date = this.getAttribute('data-date')
                 
                 // Dalam implementasi nyata, ini akan mengambil data dari server
                 // Untuk contoh, kita akan menggunakan data dummy
                 const transactionDetails = `
                     <div class="row">
                         <div class="col-md-6">
-                            <p><strong>Pengguna:</strong> John Doe</p>
-                            <p><strong>Kategori:</strong> Belanja</p>
-                            <p><strong>Jumlah:</strong> Rp 500.000</p>
+                            <p><strong>Pengguna:</strong> ${name}</p>
+                            <p><strong>Kategori:</strong> ${category}</p>
+                            <p><strong>Jumlah:</strong> Rp ${amount}</p>
                         </div>
                         <div class="col-md-6">
-                            <p><strong>Tanggal:</strong> 15 Sep 2023</p>
+                            <p><strong>Tanggal:</strong> ${date}</p>
                             <p><strong>Status:</strong> <span class="badge bg-success">Selesai</span></p>
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-12">
-                            <p><strong>Deskripsi:</strong> Pembelian kebutuhan bulanan di supermarket</p>
+                            <p><strong>Deskripsi:</strong> ${desc}</p>
                         </div>
                     </div>
                 `;
@@ -670,9 +816,31 @@
             this.submit();
         });
         
-        // Format input amount
-        document.getElementById('amount').addEventListener('input', function() {
-            if (this.value < 0) this.value = 0;
+            // Format input amount
+            document.getElementById('amount').addEventListener('input', function() {
+                if (this.value < 0) this.value = 0;
+            });
+
+                document.querySelectorAll('.btn-warning').forEach(button => {
+            button.addEventListener('click', function() {
+                const transactionId = this.getAttribute('data-id');
+                openEditModal(transactionId);
+            });
+        });
+    
+        // Validasi form edit
+        document.getElementById('editTransactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validasi sederhana
+            const amount = document.getElementById('edit_amount').value;
+            if (amount <= 0) {
+                alert('Jumlah transaksi harus lebih dari 0');
+                return;
+            }
+            
+            // Submit form jika valid
+            this.submit();
         });
         
         // Inisialisasi pengurutan default
